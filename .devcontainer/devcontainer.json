@@ -1,0 +1,6 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "forwardPorts": [8080],
+  "portsAttributes": {"8080":{"label":"dolphin-api","onAutoForward":"openBrowser"}},
+  "postCreateCommand": "wget -O model.gguf https://huggingface.co/TheBloke/TinyDolphin-2.8-1.1B-GGUF/resolve/main/tinydolphin-2.8-1.1b.Q4_K_M.gguf && nohup llama-server --host 0.0.0.0 --port 8080 -m model.gguf > /tmp/llama.log 2>&1 &"
+}
