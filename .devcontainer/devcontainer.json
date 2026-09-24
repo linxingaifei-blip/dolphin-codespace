@@ -1,1 +1,16 @@
-{"image": "mcr.microsoft.com/devcontainers/base:ubuntu"}
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {}
+  },
+  "forwardPorts": [
+    6080
+  ],
+  "portsAttributes": {
+    "6080": {
+      "label": "desktop",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh"
+}
