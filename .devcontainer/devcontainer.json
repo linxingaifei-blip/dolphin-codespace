@@ -1,15 +1,19 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/desktop-lite:1": {}
   },
   "forwardPorts": [
-    6080
+    6080,
+    3389
   ],
   "portsAttributes": {
     "6080": {
       "label": "desktop",
       "onAutoForward": "openBrowser"
+    },
+    "3389": {
+      "label": "rdp"
     }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh"
