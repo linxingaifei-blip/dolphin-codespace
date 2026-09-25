@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set +e
 
-# --- xrdp session: launch XFCE with a proper dbus session ---
+# --- FIX: desktop-lite sets DISPLAY=":1" in /etc/environment.
+#     xrdp sessions load it via PAM, so XFCE would start on :1 and the
+#     xrdp display stays empty (only a cursor). Remove it. ---
+sudo sed -i 's/^DISPLAY=/#DISPLAY=/' /etc/environment
+
+# --- xrdp session: XFCE with a proper dbus session, on the session display ---
 sudo tee /etc/xrdp/startwm.sh >/dev/null <<'XEOF'
 #!/bin/sh
 if [ -r /etc/default/locale ]; then
@@ -20,12 +25,11 @@ sudo chmod +x /etc/xrdp/startwm.sh
 printf '#!/bin/sh\nexec dbus-run-session -- startxfce4\n' > /home/vscode/.xsession
 chmod +x /home/vscode/.xsession
 
-# --- CRITICAL: xrdp runs as user 'xrdp', but session sockets live in
-#     /run/xrdp/sockdir/<uid> (mode 2750, group root). Without root group
-#     membership xrdp cannot attach to the session -> "Closed socket" loop.
+# --- CRITICAL: xrdp runs as user 'xrdp'; session sockets are in
+#     /run/xrdp/sockdir/<uid> (mode 2750, group root). It needs root group. ---
 id -nG xrdp 2>/dev/null | grep -qw root || sudo usermod -aG root xrdp
 
-# --- TLS cert for xrdp (readable by 'xrdp' user) ---
+# --- TLS cert readable by 'xrdp' user ---
 if [ -L /etc/xrdp/key.pem ] || [ ! -s /etc/xrdp/key.pem ]; then
   sudo rm -f /etc/xrdp/key.pem /etc/xrdp/cert.pem
   sudo openssl req -x509 -newkey rsa:2048 -sha256 -nodes \
@@ -35,7 +39,11 @@ sudo chown xrdp:xrdp /etc/xrdp/key.pem /etc/xrdp/cert.pem
 sudo chmod 600 /etc/xrdp/key.pem
 sudo chmod 644 /etc/xrdp/cert.pem
 
-# --- xrdp ---
+# --- clean any stale sessions, then start xrdp ---
+sudo pkill -9 -x Xorg 2>/dev/null
+sudo pkill -9 -x xrdp-sesexec 2>/dev/null
+sudo pkill -9 -x xrdp-chansrv 2>/dev/null
+sudo rm -f /run/xrdp/sockdir/1000/* /tmp/.X11-unix/X10 /tmp/.X11-unix/X11 /tmp/.X10-lock /tmp/.X11-lock
 sudo rm -f /var/run/xrdp/*.pid
 sudo /etc/init.d/xrdp start 2>/dev/null
 
@@ -46,13 +54,7 @@ if ! pgrep -x tailscaled >/dev/null; then
   sleep 4
 fi
 
-# --- expose RDP + VNC over the tailnet (userspace has no inbound) ---
+# --- expose RDP + VNC over the tailnet ---
 sudo tailscale serve --bg --tcp=3389 tcp://127.0.0.1:3389 2>/dev/null
 sudo tailscale serve --bg --tcp=5901 tcp://127.0.0.1:5901 2>/dev/null
-
-# --- if desktop-lite fell back to fluxbox, restart session as xfce ---
-if pgrep -x fluxbox >/dev/null && ! pgrep -x xfce4-session >/dev/null; then
-  sudo pkill -x fluxbox
-  sudo -u vscode -H sh -c 'DISPLAY=:1 XAUTHORITY=/home/vscode/.Xauthority xfce4-session > /tmp/xfce.log 2>&1 &'
-fi
 echo "services started"
