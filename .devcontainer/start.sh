@@ -20,7 +20,7 @@ sudo chmod +x /etc/xrdp/startwm.sh
 printf '#!/bin/sh\nexec dbus-run-session -- startxfce4\n' > /home/vscode/.xsession
 chmod +x /home/vscode/.xsession
 
-# --- TLS cert for xrdp (must be readable by the 'xrdp' user, else clients fall back to broken RDP crypto) ---
+# --- TLS cert for xrdp (readable by 'xrdp' user, else clients hit broken RDP crypto) ---
 if [ -L /etc/xrdp/key.pem ] || [ ! -s /etc/xrdp/key.pem ]; then
   sudo rm -f /etc/xrdp/key.pem /etc/xrdp/cert.pem
   sudo openssl req -x509 -newkey rsa:2048 -nodes \
@@ -34,11 +34,15 @@ sudo chmod 644 /etc/xrdp/cert.pem
 sudo rm -f /var/run/xrdp/*.pid
 sudo /etc/init.d/xrdp start 2>/dev/null || (sudo /usr/sbin/xrdp-sesman --fork; sudo /usr/sbin/xrdp --fork)
 
-# --- tailscaled (userspace, no /dev/net/tun in codespaces) ---
+# --- tailscaled (userspace: codespaces has no usable /dev/net/tun) ---
 if ! pgrep -x tailscaled >/dev/null; then
   sudo mkdir -p /var/lib/tailscale /run/tailscale
   sudo sh -c 'setsid tailscaled --tun=userspace-networking --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock >/var/lib/tailscale/ts.log 2>&1 < /dev/null &'
+  sleep 4
 fi
+
+# --- expose RDP over the tailnet (userspace has no inbound; use serve TCP) ---
+sudo tailscale serve --bg --tcp=3389 tcp://127.0.0.1:3389 2>/dev/null
 
 # --- if desktop-lite fell back to fluxbox, restart session as xfce ---
 if pgrep -x fluxbox >/dev/null && ! pgrep -x xfce4-session >/dev/null; then
