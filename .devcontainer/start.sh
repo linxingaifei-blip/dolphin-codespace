@@ -17,7 +17,7 @@ if ! pgrep -x mega-cmd-server >/dev/null; then
 fi
 
 # opencode server (web UI + API). Localhost only; reached via Tailscale.
-[ -f "$HOME/.config/opencode/server.env" ] && . "$HOME/.config/opencode/server.env"
+if [ -f "$HOME/.config/opencode/server.env" ]; then set -a; . "$HOME/.config/opencode/server.env"; set +a; fi
 mkdir -p "$HOME/mega/workspace"
 if ! pgrep -x opencode >/dev/null; then
   ( cd "$HOME/mega/workspace" && setsid "$HOME/.opencode/bin/opencode" serve --hostname 127.0.0.1 --port 4096 >"$HOME/.opencode/serve.log" 2>&1 < /dev/null & )
