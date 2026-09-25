@@ -20,6 +20,16 @@ sudo chmod +x /etc/xrdp/startwm.sh
 printf '#!/bin/sh\nexec dbus-run-session -- startxfce4\n' > /home/vscode/.xsession
 chmod +x /home/vscode/.xsession
 
+# --- TLS cert for xrdp (must be readable by the 'xrdp' user, else clients fall back to broken RDP crypto) ---
+if [ -L /etc/xrdp/key.pem ] || [ ! -s /etc/xrdp/key.pem ]; then
+  sudo rm -f /etc/xrdp/key.pem /etc/xrdp/cert.pem
+  sudo openssl req -x509 -newkey rsa:2048 -nodes \
+    -keyout /etc/xrdp/key.pem -out /etc/xrdp/cert.pem -days 3650 -subj '/CN=codespace' 2>/dev/null
+fi
+sudo chown xrdp:xrdp /etc/xrdp/key.pem /etc/xrdp/cert.pem
+sudo chmod 600 /etc/xrdp/key.pem
+sudo chmod 644 /etc/xrdp/cert.pem
+
 # --- xrdp ---
 sudo rm -f /var/run/xrdp/*.pid
 sudo /etc/init.d/xrdp start 2>/dev/null || (sudo /usr/sbin/xrdp-sesman --fork; sudo /usr/sbin/xrdp --fork)
