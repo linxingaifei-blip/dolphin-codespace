@@ -22,3 +22,6 @@ echo 'vscode:Password123!' | sudo chpasswd
 sudo find /usr/local/share /etc/profile.d -name 'desktop-init.sh' -exec sed -i 's/\bfluxbox\b/xfce4-session/g' {} \;
 
 bash "$(dirname "$0")/start.sh"
+
+# install keep-alive watchdog script
+install -m 755 "$(dirname "$0")/keepalive.sh" "$HOME/.opencode/keepalive.sh"
