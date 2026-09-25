@@ -6,17 +6,12 @@
       "version": "latest"
     }
   },
-  "forwardPorts": [
-    6080,
-    3389
-  ],
-  "portsAttributes": {
-    "6080": {
-      "label": "desktop",
-      "onAutoForward": "openBrowser"
-    },
-    "3389": {
-      "label": "rdp"
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "remote.autoForwardPorts": false,
+        "remote.autoForwardPortsSource": "hybrid"
+      }
     }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
