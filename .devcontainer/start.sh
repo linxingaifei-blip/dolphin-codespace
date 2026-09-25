@@ -28,4 +28,9 @@ fi
 sudo tailscale serve --bg --tcp=4096 tcp://127.0.0.1:4096 2>/dev/null
 sudo tailscale serve --bg --tcp=5901 tcp://127.0.0.1:5901 2>/dev/null
 sudo tailscale serve --bg --tcp=6080 tcp://127.0.0.1:6080 2>/dev/null
+
+# keep-alive watchdog: run every 30 minutes
+if ! pgrep -f '[k]eepalive.sh' >/dev/null; then
+  setsid bash -c 'while true; do bash "$HOME/.opencode/keepalive.sh" >/dev/null 2>&1; sleep 1800; done' >/dev/null 2>&1 < /dev/null &
+fi
 echo "services started"
