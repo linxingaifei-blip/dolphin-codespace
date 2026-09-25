@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set +e
 
-# --- FIX: desktop-lite exports DISPLAY=":1" globally, which breaks xrdp.
-#     (RDP abandoned; harmless to keep this cleanup.) ---
+# desktop-lite exports DISPLAY=":1" globally; remove for clean sessions
 sudo sed -i 's/^DISPLAY=/#DISPLAY=/' /etc/environment
-
-# --- ensure XFCE (not fluxbox) in the desktop-lite VNC session ---
 sudo find /usr/local/share /etc/profile.d -name 'desktop-init.sh' -exec sed -i 's/\bfluxbox\b/xfce4-session/g' {} \; 2>/dev/null
 
 # --- tailscaled (userspace: no usable /dev/net/tun in codespaces) ---
@@ -15,8 +12,21 @@ if ! pgrep -x tailscaled >/dev/null; then
   sleep 4
 fi
 
-# --- expose the desktop over the tailnet ---
-# VNC (raw) for VNC apps, noVNC (web) for a plain browser
+# --- MEGAcmd server (restores syncs from session) ---
+if ! pgrep -x mega-cmd-server >/dev/null; then
+  setsid mega-cmd-server >/dev/null 2>&1 < /dev/null &
+  sleep 3
+fi
+
+# --- opencode server, working dir on MEGA ---
+mkdir -p "$HOME/mega/workspace"
+if ! pgrep -f 'opencode serve' >/dev/null; then
+  ( cd "$HOME/mega/workspace" && setsid "$HOME/.opencode/bin/opencode" serve --hostname 0.0.0.0 --port 4096 >"$HOME/.opencode/serve.log" 2>&1 < /dev/null & )
+  sleep 2
+fi
+
+# --- expose over the tailnet ---
+sudo tailscale serve --bg --tcp=4096 tcp://127.0.0.1:4096 2>/dev/null
 sudo tailscale serve --bg --tcp=5901 tcp://127.0.0.1:5901 2>/dev/null
 sudo tailscale serve --bg --tcp=6080 tcp://127.0.0.1:6080 2>/dev/null
 echo "services started"
