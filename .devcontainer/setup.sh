@@ -12,9 +12,4 @@ echo 'vscode:Password123!' | sudo chpasswd
 # desktop-lite ships fluxbox; switch its session to xfce4
 sudo find /usr/local/share /etc/profile.d -name 'desktop-init.sh' -exec sed -i 's/\bfluxbox\b/xfce4-session/g' {} \;
 
-# xrdp -> xfce session
-echo 'exec startxfce4' | sudo tee /home/vscode/.xsession >/dev/null
-sudo chown vscode:vscode /home/vscode/.xsession
-sudo chmod +x /home/vscode/.xsession
-
 bash "$(dirname "$0")/start.sh"
