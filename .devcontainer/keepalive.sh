@@ -15,6 +15,11 @@ if ! pgrep -x mega-cmd-server >/dev/null; then
   setsid mega-cmd-server >/dev/null 2>&1 < /dev/null &
 fi
 
+# ollama watchdog (dolphin local inference)
+if ! pgrep -f '[o]llama-watch.sh' >/dev/null; then
+  setsid "$HOME/.opencode/ollama-watch.sh" >/dev/null 2>&1 < /dev/null &
+fi
+
 # opencode server (password-protected)
 if ! pgrep -x opencode >/dev/null; then
   if [ -f "$HOME/.config/opencode/server.env" ]; then

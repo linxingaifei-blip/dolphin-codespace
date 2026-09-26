@@ -24,6 +24,11 @@ if ! pgrep -x opencode >/dev/null; then
   sleep 2
 fi
 
+# ollama watchdog (dolphin local inference on CPU)
+if ! pgrep -f '[o]llama-watch.sh' >/dev/null; then
+  setsid "$HOME/.opencode/ollama-watch.sh" >/dev/null 2>&1 < /dev/null &
+fi
+
 # expose over the tailnet only (no GitHub port forwarding)
 sudo tailscale serve --bg --tcp=4096 tcp://127.0.0.1:4096 2>/dev/null
 sudo tailscale serve --bg --tcp=5901 tcp://127.0.0.1:5901 2>/dev/null
